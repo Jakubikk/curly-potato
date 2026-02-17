@@ -1,12 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  withSequence
-} from 'react-native-reanimated';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Animated } from 'react-native';
 import { useTheme } from '../hooks/useTheme';
 
 interface MascotProps {
@@ -23,32 +16,40 @@ const emotions = {
 
 export const Mascot: React.FC<MascotProps> = ({ emotion = 'neutral', size }) => {
   const { colors, sizes } = useTheme();
-  const bounce = useSharedValue(0);
+  const bounceAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    bounce.value = withRepeat(
-      withSequence(
-        withTiming(-10, { duration: 1000 }),
-        withTiming(0, { duration: 1000 })
-      ),
-      -1,
-      true
-    );
-  }, []);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: bounce.value }],
-  }));
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(bounceAnim, {
+          toValue: -10,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bounceAnim, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, [bounceAnim]);
 
   return (
-    <Animated.View style={[styles.container, animatedStyle]}>
-      <Text style={[
-        styles.text,
-        { color: colors.primary, fontSize: size || sizes.xlarge * 1.5 }
-      ]}>
+    <View style={styles.container}>
+      <Animated.Text
+        style={[
+          styles.text,
+          {
+            color: colors.primary,
+            fontSize: size || sizes.xlarge * 1.5,
+            transform: [{ translateY: bounceAnim }]
+          }
+        ]}
+      >
         {emotions[emotion]}
-      </Text>
-    </Animated.View>
+      </Animated.Text>
+    </View>
   );
 };
 
